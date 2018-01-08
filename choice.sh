@@ -1,8 +1,8 @@
 #!/bin/bash
 
-. ./color.sh
-. ./cursor.sh
-. ./keyboard.sh
+. color.sh
+. cursor.sh
+. keyboard.sh
 
 declare -A STDIN
 
