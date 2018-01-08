@@ -29,7 +29,10 @@ select_entry() {
         case $KEY in
             UP)     entry=$(((entry-1+size)%size)) ;;
             DOWN)   entry=$(((entry+1)%size)) ;;
-            ENTER)   echo "$(echo "${STDIN[$entry]}" | cut -d" " -f1)" ; exit ;;
+            ENTER)
+                echo "$(echo "${STDIN[$entry]}" | cut -d" " -f1)"
+                exit
+                ;;
         esac
     done
 }
