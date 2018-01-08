@@ -25,16 +25,12 @@ select_entry() {
     size=${#STDIN[@]}
     while true ; do
         print_menu "$entry"
-        read_key
+        read_key_no_stty
         case $KEY in
             UP)     entry=$(((entry-1+size)%size)) ;;
             DOWN)   entry=$(((entry+1)%size)) ;;
+            ENTER)   echo "$(echo "${STDIN[$entry]}" | cut -d" " -f1)" ; exit ;;
         esac
-
-        if [ -z "$KEY" ] ; then
-            echo "$(echo "${STDIN[$entry]}" | cut -d" " -f1)"
-            exit
-        fi
     done
 }
         
