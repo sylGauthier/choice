@@ -6,3 +6,5 @@ Reads STDIN, splits each line around the first space, the left part is the key, 
 Displays the values in an interactive menu, and prints the key of the selected value in STDOUT.
 
 If there is no space in a line, the value is interpreted as both the key and the value.
+
+**Requires the color.sh, keyboard.sh and cursor.sh scripts (https://github.com/fx-carton/bash-scripts) in the PATH**
