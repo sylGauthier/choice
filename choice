@@ -26,7 +26,7 @@ print_menu() {
 }
 
 select_entry() {
-    entry=0
+    entry="$1"
     size=${#STDIN[@]}
     while true ; do
         print_menu "$entry"
@@ -43,10 +43,12 @@ select_entry() {
 
 index=0
 timeout=-1
+defaultentry=0
 
 while [ $# -gt 0 ]; do
     case "$1" in
         -t) shift; timeout="${1:-0}"; shift ;;
+        -e) shift; defaultentry="$1"; shift ;;
         *)
             printf 'Error: invalid option "%s"\n' "$1" >&2
             exit 1
@@ -59,8 +61,8 @@ while read LINE ; do
     ((index++))
 done
 
-[ "$timeout" -ge 0 ] && { timeout=10; while true; do sleep 1; kill -USR1 $$; done; } &
-trap '((timeout--)); [ "$timeout" -eq 0 ] && exit; erase_in_line 2; print_timeout' USR1
-trap 'kill $(jobs -p) 2>/dev/null; wait $(jobs -p) 2>/dev/null; cut -d" " -f1 <<< "${STDIN[$entry]}"' EXIT;
+[ "$timeout" -ge 0 ] && { while true; do sleep 1; kill -USR1 $$; done; } &
+trap '((timeout--)); [ "$timeout" -eq 0 ] && exit; erase_in_line 2 > /dev/tty; print_timeout' USR1
+trap 'kill $(jobs -p) 2>/dev/null; wait $(jobs -p) 2>/dev/null; cut -d" " -f1 <<< "${STDIN[$entry]}"; erase_display 2 > /dev/tty; cursor_pos > /dev/tty' EXIT
 
-select_entry
+select_entry "$defaultentry"
