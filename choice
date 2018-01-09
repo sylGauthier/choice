@@ -6,6 +6,10 @@
 
 declare -A STDIN
 
+print_timeout() {
+    [ "$timeout" -ge 0 ] && printf 'Timeout %d\r' "$timeout" > /dev/tty
+}
+
 print_menu() {
     erase_display 2 > /dev/tty
     cursor_pos 0 0 > /dev/tty
@@ -18,6 +22,7 @@ print_menu() {
         reset_bg > /dev/tty
         printf "\n" > /dev/tty
     done
+    print_timeout
 }
 
 select_entry() {
@@ -29,20 +34,33 @@ select_entry() {
         case $KEY in
             UP)     entry=$(((entry-1+size)%size)) ;;
             DOWN)   entry=$(((entry+1)%size)) ;;
-            ENTER)
-                echo "$(echo "${STDIN[$entry]}" | cut -d" " -f1)"
-                exit
-                ;;
+            ENTER)  exit ;;
         esac
+        timeout=-1
+        kill $(jobs -p); wait $(jobs -p) 2>/dev/null
     done
 }
-        
 
 index=0
+timeout=-1
+
+while [ $# -gt 0 ]; do
+    case "$1" in
+        -t) shift; timeout="${1:-0}"; shift ;;
+        *)
+            printf 'Error: invalid option "%s"\n' "$1" >&2
+            exit 1
+            ;;
+    esac
+done
 
 while read LINE ; do
     STDIN[$index]="$LINE"
     ((index++))
 done
+
+[ "$timeout" -ge 0 ] && { timeout=10; while true; do sleep 1; kill -USR1 $$; done; } &
+trap '((timeout--)); [ "$timeout" -eq 0 ] && exit; erase_in_line 2; print_timeout' USR1
+trap 'kill $(jobs -p) 2>/dev/null; wait $(jobs -p) 2>/dev/null; cut -d" " -f1 <<< "${STDIN[$entry]}"' EXIT;
 
 select_entry
