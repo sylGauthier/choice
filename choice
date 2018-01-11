@@ -10,31 +10,69 @@ print_timeout() {
     [ "$timeout" -ge 0 ] && printf 'Timeout %d\r' "$timeout" > /dev/tty
 }
 
+entry_visible() {
+    [ -z "$2" ] || grep -qi "$2" <<< "${STDIN[$1]}"
+}
+
+num_visible_entries() {
+    if [ -z "$1" ]; then
+        echo ${#STDIN[@]}
+    else
+        printf '%s\n' "${STDIN[@]}" | grep -i "$1" | wc -l
+    fi
+}
+
+has_visible_entries() {
+    [ "$(num_visible_entries "$1")" -gt 0 ]
+}
+
 print_menu() {
     erase_display 2 > /dev/tty
     cursor_pos 0 0 > /dev/tty
 
     for i in $(seq 0 $((${#STDIN[@]}-1))) ; do
-        ENTRY="$(echo  "${STDIN[$i]}" | cut -d" " -f2-)"
-        [ "$i" == "$1" ] && set_bg $COLOR_WHITE > /dev/tty && set_fg $COLOR_BLACK > /dev/tty
-        printf "$ENTRY" > /dev/tty
-        reset_fg > /dev/tty
-        reset_bg > /dev/tty
-        printf "\n" > /dev/tty
+        if entry_visible "$i" "$2"; then
+            ENTRY="$(echo  "${STDIN[$i]}" | cut -d" " -f2-)"
+            [ "$i" == "$1" ] && set_bg $COLOR_WHITE > /dev/tty && set_fg $COLOR_BLACK > /dev/tty
+            printf "$ENTRY" > /dev/tty
+            reset_fg > /dev/tty
+            reset_bg > /dev/tty
+            printf "\n" > /dev/tty
+        fi
     done
+    cursor_pos $(($(tput lines)-1))
+    [ -z "$2" ] || printf '/%s' "$2"
     print_timeout
+}
+
+decr_entry() {
+    entry=$(((entry-1+size)%size))
+    while ! entry_visible "$entry" "$userinput"; do entry=$(((entry-1+size)%size)); done
+}
+
+incr_entry() {
+    entry=$(((entry+1)%size))
+    while ! entry_visible "$entry" "$userinput"; do entry=$(((entry+1)%size)); done
+}
+
+reset_entry() {
+    entry=0
+    while ! entry_visible "$entry" "$userinput"; do entry=$(((entry+1)%size)); done
 }
 
 select_entry() {
     entry="$1"
     size=${#STDIN[@]}
+    userinput=
     while true ; do
-        print_menu "$entry"
+        print_menu "$entry" "$userinput"
         read_key_no_stty
         case $KEY in
-            UP)     entry=$(((entry-1+size)%size)) ;;
-            DOWN)   entry=$(((entry+1)%size)) ;;
-            ENTER)  exit ;;
+            UP)        has_visible_entries "$userinput" && decr_entry ;;
+            DOWN)      has_visible_entries "$userinput" && incr_entry ;;
+            ENTER)     has_visible_entries "$userinput" && exit ;;
+            [a-zA-Z])  userinput="$userinput$KEY"; has_visible_entries "$userinput" && reset_entry ;;
+            BACKSPACE) [ -z "$userinput" ] || userinput="${userinput:0:${#userinput}-1}" ;;
         esac
         timeout=-1
         kill $(jobs -p); wait $(jobs -p) 2>/dev/null
