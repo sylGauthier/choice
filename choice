@@ -40,7 +40,7 @@ print_menu() {
             printf "\n" > /dev/tty
         fi
     done
-    cursor_pos $(($(tput lines)-1))
+    cursor_pos $(($(tput lines)-1)) > /dev/tty
     [ -z "$2" ] || printf '/%s' "$2"
     print_timeout
 }
