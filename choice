@@ -40,7 +40,8 @@ print_menu() {
             printf "\n" > /dev/tty
         fi
     done
-    [ -z "$2" ] || printf 'Search: %s' "$2"
+    cursor_pos $(($(tput lines)-1))
+    [ -z "$2" ] || printf '/%s' "$2"
     print_timeout
 }
 
