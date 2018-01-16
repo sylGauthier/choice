@@ -4,78 +4,106 @@
 . cursor.sh
 . keyboard.sh
 
-declare -A STDIN
-
 print_timeout() {
+    cursor_pos $(tput lines) > /dev/tty
+    color_positive > /dev/tty
     [ "$timeout" -ge 0 ] && printf 'Timeout %d\r' "$timeout" > /dev/tty
 }
 
-entry_visible() {
-    [ -z "$2" ] || grep -qi "$2" <<< "${STDIN[$1]}"
+print_search() {
+    cursor_pos $(tput lines) > /dev/tty
+    color_positive > /dev/tty
+    erase_in_line 2 > /dev/tty
+    [ -z "$userinput" ] || printf '/%s' "$userinput" > /dev/tty
 }
 
-num_visible_entries() {
-    if [ -z "$1" ]; then
-        echo ${#STDIN[@]}
-    else
-        printf '%s\n' "${STDIN[@]}" | grep -i "$1" | wc -l
-    fi
+print_entry() {
+    text="$(sed -n "$(($1+1))p" <<< "$filtered" | cut -d" " -f2-)"
+    max="$(($(tput cols) - 3))"
+    [ "${#text}" -ge "$max" ] && text="${text:0:$max}..."
+    ( [ "$1" -eq "$entry" ] && color_negative || color_positive ) > /dev/tty
+    cursor_pos "$(($1+1))" > /dev/tty
+    printf '%s' "$text" > /dev/tty
 }
 
-has_visible_entries() {
-    [ "$(num_visible_entries "$1")" -gt 0 ]
-}
-
-print_menu() {
+print_all() {
     erase_display 2 > /dev/tty
-    cursor_pos 0 0 > /dev/tty
-
-    for i in $(seq 0 $((${#STDIN[@]}-1))) ; do
-        if entry_visible "$i" "$2"; then
-            ENTRY="$(echo  "${STDIN[$i]}" | cut -d" " -f2-)"
-            [ "$i" == "$1" ] && set_bg $COLOR_WHITE > /dev/tty && set_fg $COLOR_BLACK > /dev/tty
-            printf "$ENTRY" > /dev/tty
-            reset_fg > /dev/tty
-            reset_bg > /dev/tty
-            printf "\n" > /dev/tty
-        fi
+    for (( i=0; i<size; i++)); do
+        print_entry "$i"
     done
-    cursor_pos $(($(tput lines)-1)) > /dev/tty
-    [ -z "$2" ] || printf '/%s' "$2" > /dev/tty
-    print_timeout
+    print_search
 }
 
-decr_entry() {
-    entry=$(((entry-1+size)%size))
-    while ! entry_visible "$entry" "$userinput"; do entry=$(((entry-1+size)%size)); done
+update_filtered() {
+    if [ -z "$1" ]; then
+        filtered="$(tail "-n+$((offset+1))" <<< "$STDIN" | head "-n$(($(tput lines)-1))")"
+    else
+        filtered="$(grep -i "$1" <<< "$STDIN" | tail "-n+$((offset+1))" | head "-n$(($(tput lines)-1))")"
+    fi
+    size="$(wc -l <<< "$filtered")"
 }
 
-incr_entry() {
-    entry=$(((entry+1)%size))
-    while ! entry_visible "$entry" "$userinput"; do entry=$(((entry+1)%size)); done
-}
-
-reset_entry() {
-    entry=0
-    while ! entry_visible "$entry" "$userinput"; do entry=$(((entry+1)%size)); done
+change_entry() {
+    old="$entry"
+    entry="$1"
+    print_entry "$old"
+    print_entry "$entry"
 }
 
 select_entry() {
     entry="$1"
-    size=${#STDIN[@]}
-    userinput=
-    while true ; do
-        print_menu "$entry" "$userinput"
-        read_key_no_stty
+    offset=0
+    userinput=""
+    update_filtered "$userinput"
+
+    print_all
+    print_timeout
+
+    while true; do
+        read_key
         case $KEY in
-            UP)        has_visible_entries "$userinput" && decr_entry ;;
-            DOWN)      has_visible_entries "$userinput" && incr_entry ;;
-            ENTER)     has_visible_entries "$userinput" && exit ;;
-            [a-zA-Z])  userinput="$userinput$KEY"; has_visible_entries "$userinput" && reset_entry ;;
-            BACKSPACE) [ -z "$userinput" ] || userinput="${userinput:0:${#userinput}-1}" ;;
+            DOWN)
+                if [ "$size" -gt 0 ]; then
+                    if [ "$entry" -lt "$((size-1))" ]; then
+                        change_entry $((entry+1))
+                    elif [ "$size" -ge "$(($(tput lines)-1))" ]; then
+                        ((offset += $(($(tput lines)-1))))
+                        update_filtered "$userinput"
+                        entry=0
+                        print_all
+                    fi
+                fi
+                ;;
+            UP)
+                if [ "$size" -gt 0 ]; then
+                    if [ "$entry" -gt 0 ]; then
+                        change_entry $((entry-1))
+                    elif [ "$offset" -gt 0 ]; then
+                        ((offset -= $(($(tput lines)-1))))
+                        [ "$offset" -lt 0 ] && offset=0
+                        update_filtered "$userinput"
+                        entry="$((size-1))"
+                        print_all
+                    fi
+                fi
+                ;;
+            ENTER)
+                [ "$size" -gt 0 ] && exit ;;
+            [a-zA-Z])
+                userinput="$userinput$KEY"
+                update_filtered "$userinput"
+                entry=0
+                print_all
+                ;;
+            BACKSPACE)
+                [ -z "$userinput" ] || userinput="${userinput:0:${#userinput}-1}"
+                update_filtered "$userinput"
+                entry=0
+                print_all
+                ;;
         esac
         timeout=-1
-        kill $(jobs -p); wait $(jobs -p) 2>/dev/null
+        kill $(jobs -p) 2>/dev/null; wait $(jobs -p) 2>/dev/null
     done
 }
 
@@ -95,12 +123,12 @@ while [ $# -gt 0 ]; do
 done
 
 while read LINE ; do
-    STDIN[$index]="$LINE"
+    STDIN="$STDIN$LINE"$'\n'
     ((index++))
 done
 
 [ "$timeout" -ge 0 ] && { while true; do sleep 1; kill -USR1 $$; done; } &
 trap '((timeout--)); [ "$timeout" -eq 0 ] && exit; erase_in_line 2 > /dev/tty; print_timeout' USR1
-trap 'kill $(jobs -p) 2>/dev/null; wait $(jobs -p) 2>/dev/null; cut -d" " -f1 <<< "${STDIN[$entry]}"; erase_display 2 > /dev/tty; cursor_pos > /dev/tty' EXIT
+trap 'stty echo < /dev/tty; kill $(jobs -p) 2>/dev/null; wait $(jobs -p) 2>/dev/null; erase_display 2 > /dev/tty; color_positive > /dev/tty; cursor_pos > /dev/tty; sed -n "$((entry+1))p" <<< "$filtered" | cut -d" " -f1' EXIT
 
 select_entry "$defaultentry"
