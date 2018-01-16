@@ -5,33 +5,29 @@
 . keyboard.sh
 
 print_timeout() {
-    cursor_pos $(tput lines) > /dev/tty
-    color_positive > /dev/tty
-    [ "$timeout" -ge 0 ] && printf 'Timeout %d\r' "$timeout" > /dev/tty
+    cursor_pos $(tput lines)
+    color_positive
+    [ "$timeout" -ge 0 ] && printf 'Timeout %d\r' "$timeout"
 }
 
 print_search() {
-    cursor_pos $(tput lines) > /dev/tty
-    color_positive > /dev/tty
-    erase_in_line 2 > /dev/tty
-    [ -z "$userinput" ] || printf '/%s' "$userinput" > /dev/tty
+    cursor_pos $(tput lines)
+    color_positive
+    erase_in_line 2
+    [ -z "$userinput" ] || printf '/%s' "$userinput"
 }
 
 print_entry() {
     text="$(sed -n "$(($1+1))p" <<< "$filtered" | cut -d" " -f2-)"
     max="$(($(tput cols) - 3))"
     [ "${#text}" -ge "$max" ] && text="${text:0:$max}..."
-    ( [ "$1" -eq "$entry" ] && color_negative || color_positive ) > /dev/tty
-    cursor_pos "$(($1+1))" > /dev/tty
-    printf '%s' "$text" > /dev/tty
+    [ "$1" -eq "$entry" ] && color_negative || color_positive
+    cursor_pos "$(($1+1))"
+    printf '%s' "$text"
 }
 
 print_all() {
-    erase_display 2 > /dev/tty
-    for (( i=0; i<size; i++)); do
-        print_entry "$i"
-    done
-    print_search
+    printf '%s' "$(erase_display 2; for (( i=0; i<size; i++)); do print_entry "$i"; done; print_search)" > /dev/tty
 }
 
 update_filtered() {
@@ -46,8 +42,8 @@ update_filtered() {
 change_entry() {
     old="$entry"
     entry="$1"
-    print_entry "$old"
-    print_entry "$entry"
+    print_entry "$old" > /dev/tty
+    print_entry "$entry" > /dev/tty
 }
 
 select_entry() {
@@ -57,7 +53,7 @@ select_entry() {
     update_filtered "$userinput"
 
     print_all
-    print_timeout
+    print_timeout > /dev/tty
 
     while true; do
         read_key
