@@ -97,6 +97,10 @@ select_entry() {
                 entry=0
                 print_all
                 ;;
+            ESC)
+                filtered=""
+                exit
+                ;;
         esac
         timeout=-1
         kill $(jobs -p) 2>/dev/null; wait $(jobs -p) 2>/dev/null
