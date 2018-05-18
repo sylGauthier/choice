@@ -4,16 +4,11 @@
 . cursor.sh
 . keyboard.sh
 
-print_timeout() {
-    cursor_pos $(tput lines)
-    color_positive
-    [ "$timeout" -ge 0 ] && printf 'Timeout %d\r' "$timeout"
-}
-
-print_search() {
+print_statusbar() {
     cursor_pos $(tput lines)
     color_positive
     erase_in_line 2
+    [ "$timeout" -ge 0 ] && printf 'Timeout %d\r' "$timeout"
     [ -z "$userinput" ] || printf '/%s' "$userinput"
 }
 
@@ -27,7 +22,7 @@ print_entry() {
 }
 
 print_all() {
-    printf '%s' "$(erase_display 2; for (( i=0; i<size; i++)); do print_entry "$i"; done; print_search)" > /dev/tty
+    printf '%s' "$(erase_display 2; for (( i=0; i<size; i++)); do print_entry "$i"; done; print_statusbar)" > /dev/tty
 }
 
 update_filtered() {
@@ -53,10 +48,13 @@ select_entry() {
     update_filtered "$userinput"
 
     print_all
-    print_timeout > /dev/tty
+    print_statusbar > /dev/tty
 
     while true; do
         read_key
+        timeout=-1
+        kill $(jobs -p) 2>/dev/null; wait $(jobs -p) 2>/dev/null
+        print_statusbar > /dev/tty
         case $KEY in
             DOWN)
                 if [ "$size" -gt 0 ]; then
@@ -102,8 +100,6 @@ select_entry() {
                 exit
                 ;;
         esac
-        timeout=-1
-        kill $(jobs -p) 2>/dev/null; wait $(jobs -p) 2>/dev/null
     done
 }
 
@@ -128,7 +124,7 @@ while read LINE ; do
 done
 
 [ "$timeout" -ge 0 ] && { while true; do sleep 1; kill -USR1 $$; done; } &
-trap '((timeout--)); [ "$timeout" -eq 0 ] && exit; erase_in_line 2 > /dev/tty; print_timeout > /dev/tty' USR1
+trap '((timeout--)); [ "$timeout" -eq 0 ] && exit; erase_in_line 2 > /dev/tty; print_statusbar > /dev/tty' USR1
 trap 'stty echo < /dev/tty; kill $(jobs -p) 2>/dev/null; wait $(jobs -p) 2>/dev/null; erase_display 2 > /dev/tty; color_positive > /dev/tty; cursor_pos > /dev/tty; sed -n "$((entry+1))p" <<< "$filtered" | cut -d" " -f1' EXIT
 
 select_entry "$defaultentry"
