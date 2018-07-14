@@ -129,5 +129,6 @@ done
 [ "$timeout" -ge 0 ] && { while true; do sleep 1; kill -USR1 $$; done; } &
 trap '((timeout--)); [ "$timeout" -eq 0 ] && exit; erase_in_line 2 > /dev/tty; print_statusbar' USR1
 trap 'stty echo < /dev/tty; kill $(jobs -p) 2>/dev/null; wait $(jobs -p) 2>/dev/null; (cursor_show; erase_display 2; color_positive; cursor_pos) > /dev/tty; sed -n "$((entry+1))p" <<< "$filtered" | cut -d" " -f1' EXIT
+trap print_all WINCH
 
 select_entry "$defaultentry"
