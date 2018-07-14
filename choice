@@ -16,8 +16,8 @@ print_statusbar() {
 
 print_entry() {
     text="$(sed -n "$(($1+1))p" <<< "$filtered" | cut -d" " -f2-)"
-    max="$(($(tput cols) - 3))"
-    [ "${#text}" -ge "$max" ] && text="${text:0:$max}..."
+    cols="$(tput cols)"
+    [ "${#text}" -gt "$cols" ] && text="${text:0:$((cols - 3))}..."
     [ "$1" -eq "$entry" ] && color_negative || color_positive
     cursor_pos "$(($1+1))"
     printf '%s' "$text"
