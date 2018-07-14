@@ -121,10 +121,7 @@ while [ $# -gt 0 ]; do
     esac
 done
 
-while read LINE ; do
-    STDIN="$STDIN$LINE"$'\n'
-    ((index++))
-done
+STDIN="$(cat)"
 
 [ "$timeout" -ge 0 ] && { while true; do sleep 1; kill -USR1 $$; done; } &
 trap '((timeout--)); [ "$timeout" -eq 0 ] && exit; erase_in_line 2 > /dev/tty; print_statusbar' USR1
