@@ -16,7 +16,7 @@ print_statusbar() {
 
 get_entry() {
     sed -n "$(($1+1))p" <<< "$filtered" | {
-        IFS=" " read key val
+        IFS="$separator" read key val
         format="$2"
         while [ -n "$format" ]; do
             IFS="%" read text format <<< "$format"
@@ -143,6 +143,7 @@ timeout=-1
 defaultentry=0
 rformat="%k"
 dformat="%v"
+separator=" "
 
 while [ $# -gt 0 ]; do
     case "$1" in
@@ -150,6 +151,7 @@ while [ $# -gt 0 ]; do
         -e) shift; defaultentry="$1"; shift ;;
         -r) shift; rformat="$1"; shift ;;
         -d) shift; dformat="$1"; shift ;;
+        -s) shift; separator="$1"; shift ;;
         *)
             printf 'Error: invalid option "%s"\n' "$1" >&2
             exit 1
