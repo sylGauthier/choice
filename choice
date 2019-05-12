@@ -64,7 +64,7 @@ update_filtered() {
     if [ -z "$1" ]; then
         filtered="$(tail "-n+$((offset+1))" <<< "$STDIN" | head "-n$(($(tput lines)-1))")"
     else
-        filtered="$(grep -i "^[^ ]* .*$1" <<< "$STDIN" | tail "-n+$((offset+1))" | head "-n$(($(tput lines)-1))")"
+        filtered="$(grep -i "^[^$separator]*[$separator].*$1" <<< "$STDIN" | tail "-n+$((offset+1))" | head "-n$(($(tput lines)-1))")"
     fi
     size="$(wc -l <<< "$filtered")"
 }
