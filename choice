@@ -17,10 +17,25 @@ print_statusbar() {
 print_entry() {
     text="$(sed -n "$(($1+1))p" <<< "$filtered" | cut -d" " -f2-)"
     cols="$(tput cols)"
-    [ "${#text}" -gt "$cols" ] && text="${text:0:$((cols - 3))}..."
     [ "$1" -eq "$entry" ] && color_negative || color_positive
     cursor_pos "$(($1+1))"
-    printf '%s' "$text"
+    while [ -n "$text" ]; do
+        if [[ "$text" =~ ^($'\e['[0-9:;<=>?]*[!\"#$%&\'()*+,-./]*[]@A-Z[\\^_\`a-z{|}~])(.*) ]]; then
+            printf '%s' "${BASH_REMATCH[1]}"
+            text="${BASH_REMATCH[2]}"
+        fi
+        if [[ "$text" =~ ^([^$'\e']*)($'\e'.*) ]]; then
+            cur="${BASH_REMATCH[1]}"
+            text="${BASH_REMATCH[2]}"
+        else
+            cur="$text"
+            text=""
+        fi
+        [ "$cols" -lt 3 ] && [ -n "$cur" ] && cur="$(seq "$cols" | tr -d '\n' | tr '[1-3]' '.')"
+        [ "${#cur}" -gt "$cols" ] && cur="${cur:0:$((cols - 3))}..."
+        printf '%s' "$cur"
+        ((cols -= ${#cur}))
+    done
 }
 
 print_all() {
