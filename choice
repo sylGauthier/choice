@@ -16,10 +16,10 @@ print_statusbar() {
 
 get_entry() {
     sed -n "$(($1+1))p" <<< "$filtered" | {
-        IFS="$separator" read key val
+        IFS="$separator" read -r key val
         format="$2"
         while [ -n "$format" ]; do
-            IFS="%" read text format <<< "$format"
+            IFS="%" read -r text format <<< "$format"
             printf '%s' "$text"
             case "$format" in
                 k*) printf '%s' "$key"; format="${format:1}";;
