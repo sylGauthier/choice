@@ -118,7 +118,7 @@ select_entry() {
                 ;;
             ENTER)
                 [ "$size" -gt 0 ] && exit ;;
-            [a-zA-Z])
+            [a-zA-Z0-9])
                 userinput="$userinput$KEY"
                 update_filtered "$userinput"
                 entry=0
