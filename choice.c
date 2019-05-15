@@ -255,18 +255,19 @@ int main(int argc, char** argv) {
                             } else {
                                 selected = saved;
                             }
-                            if (offset > selected) {
-                                offset = selected;
-                                case KEY_PGUP:
-                                saved = offset;
-                                j = lines - (key != KEY_PGUP);
-                                while (offset > 0 && j > 1) {
-                                    j -= entries[--offset].enabled;
-                                    if (entries[offset].enabled) saved = offset;
-                                }
-                                if (!entries[offset].enabled) offset = saved;
-                                disp_page(entries, numEntries, offset, dformat, selected);
+                            if (offset <= selected) {
+                                break;
                             }
+                        case KEY_PGUP:
+                            saved = offset;
+                            j = lines;
+                            while (offset > 0 && j > 1) {
+                                j -= entries[--offset].enabled;
+                                if (entries[offset].enabled) saved = offset;
+                            }
+                            if (!entries[offset].enabled) offset = saved;
+                            if (key == KEY_PGUP) selected = offset;
+                            disp_page(entries, numEntries, offset, dformat, selected);
                             break;
                         case KEY_DOWN:
                             saved = selected;
@@ -282,9 +283,9 @@ int main(int argc, char** argv) {
                             }
                             break;
                         case KEY_PGDN:
-                            j = lines - 1;
+                            j = lines;
                             saved = offset;
-                            while (offset + 1 < numEntries && j > 0) {
+                            while (offset + 1 < numEntries && j > 1) {
                                 j -= entries[++offset].enabled;
                                 if (entries[offset].enabled) saved = offset;
                             }
