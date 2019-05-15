@@ -82,3 +82,23 @@ seq 10 | choice
 .EX
 vim "$(grep -rIH query | choice -s ':'  -d '%k: %v')"
 .EE
+
+.SH MENU CONTROLS
+.TP
+.BR Up / Down
+Move cursor one entry up/down.
+.TP
+.BR PgUp / PgDn
+Move to next/previous page.
+.TP
+.BR Orig / End
+Move to first/last entry.
+.TP
+.BR Escape
+Cancel (exit without selection).
+.TP
+.BR Enter
+Select choice (exit with selection).
+.TP
+.BR a - z ", " A - Z ", " 0 - 9 ", " Backspace
+Update filter text.
