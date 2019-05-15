@@ -18,6 +18,10 @@ static void sigwinch(int unused) {
     winch = 1;
 }
 
+static void usage(const char* prog) {
+    printf("Usage: %s [-t timeout] [-e index] [-r format] [-d format] [-s separators]\n", prog);
+}
+
 static void print_statusbar(int timeout, const char* searchstring, unsigned int start, unsigned int end, unsigned int total) {
     char buffer[128];
     int n;
@@ -134,7 +138,8 @@ int main(int argc, char** argv) {
         {"--default-entry", "-e"},
         {"--rformat", "-r"},
         {"--dformat", "-d"},
-        {"--separator", "-s"}
+        {"--separator", "-s"},
+        {"--help", "-h"},
     };
     int timeout = -1;
     const char *rformat = "%k", *dformat = "%v", *separator = " ", *arg;
@@ -152,20 +157,22 @@ int main(int argc, char** argv) {
                 break;
             }
         }
-        if (*arg++ == '-') {
-            while (*arg) {
-                switch (*arg++) {
+        if (*arg == '-') {
+            while (*++arg) {
+                switch (*arg) {
                     case 't': GET_INT(timeout);
                     case 'e': GET_UINT(selected);
                     case 'r': GET_STR(rformat);
                     case 'd': GET_STR(dformat);
                     case 's': GET_STR(separator);
+                    case 'h': usage(argv[0]); return 0;
                 }
                 break;
             }
         }
         if (*arg) {
             fprintf(stderr, "Error: invalid option\n");
+            usage(argv[0]);
             return 1;
         }
     }
