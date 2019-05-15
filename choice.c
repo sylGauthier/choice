@@ -245,82 +245,109 @@ int main(int argc, char** argv) {
                     }
                     break;
 
+                case KEY_UP:
+                    saved = selected;
+                    while (selected > 0 && !entries[--selected].enabled);
+                    if (entries[selected].enabled) {
+                        change_entry(entries + saved, entries + selected, dformat, entries[saved].num - entries[offset].num + 1, entries[selected].num - entries[offset].num + 1);
+                    } else {
+                        selected = saved;
+                    }
+                    if (offset <= selected) {
+                        break;
+                    }
+
+                case KEY_PGUP:
+                    saved = offset;
+                    j = lines;
+                    while (offset > 0 && j > 1) {
+                        j -= entries[--offset].enabled;
+                        if (entries[offset].enabled) saved = offset;
+                    }
+                    if (!entries[offset].enabled) offset = saved;
+                    if (key == KEY_PGUP) selected = offset;
+                    disp_page(entries, numEntries, offset, dformat, selected);
+                    break;
+
+                case KEY_DOWN:
+                    saved = selected;
+                    while (selected + 1 < numEntries && !entries[++selected].enabled);
+                    if (entries[selected].enabled) {
+                        change_entry(entries + saved, entries + selected, dformat, entries[saved].num - entries[offset].num + 1, entries[selected].num - entries[offset].num + 1);
+                    } else {
+                        selected = saved;
+                    }
+                    if (entries[offset].num + lines - 1 <= entries[selected].num) {
+                        offset = selected;
+                        disp_page(entries, numEntries, offset, dformat, selected);
+                    }
+                    break;
+
+                case KEY_PGDN:
+                    j = lines;
+                    saved = offset;
+                    while (offset + 1 < numEntries && j > 1) {
+                        j -= entries[++offset].enabled;
+                        if (entries[offset].enabled) saved = offset;
+                    }
+                    if (!entries[offset].enabled) offset = saved;
+                    selected = offset;
+                    disp_page(entries, numEntries, offset, dformat, selected);
+                    break;
+
+                case KEY_ORIG:
+                    offset = 0;
+                    while (!entries[offset].enabled && ++offset < numEntries);
+                    selected = offset;
+                    disp_page(entries, numEntries, offset, dformat, selected);
+                    break;
+
+                case KEY_END: case KEY_END2:
+                    offset = numEntries - 1;
+                    while (!entries[offset].enabled && offset > 0) offset--;
+                    selected = offset;
+                    disp_page(entries, numEntries, offset, dformat, selected);
+                    break;
+
+                case KEY_ESC:
+                    ret = 2;
+                    running = 0;
+                    break;
+
+                case '\n':
+                    if (entries[selected].enabled) {
+                        running = 0;
+                    }
+                    break;
+
+                case KEY_BACK:
+                    if (searchlen) {
+                        buffer[--searchlen] = 0;
+                    }
+                    etotal = 0;
+                    offset = 0;
+                    for (j = 0; j < numEntries; j++) {
+                        if ((entries[j].enabled = strstr(entries[j].val, buffer) != NULL)) {
+                            entries[j].num = etotal++;
+                        }
+                        if (!entries[offset].enabled) {
+                            offset = j;
+                        }
+                    }
+                    selected = offset;
+                    disp_page(entries, numEntries, offset, dformat, selected);
+                    break;
+
                 default:
-                    switch (key) {
-                        case KEY_UP:
-                            saved = selected;
-                            while (selected > 0 && !entries[--selected].enabled);
-                            if (entries[selected].enabled) {
-                                change_entry(entries + saved, entries + selected, dformat, entries[saved].num - entries[offset].num + 1, entries[selected].num - entries[offset].num + 1);
-                            } else {
-                                selected = saved;
-                            }
-                            if (offset <= selected) {
-                                break;
-                            }
-                        case KEY_PGUP:
-                            saved = offset;
-                            j = lines;
-                            while (offset > 0 && j > 1) {
-                                j -= entries[--offset].enabled;
-                                if (entries[offset].enabled) saved = offset;
-                            }
-                            if (!entries[offset].enabled) offset = saved;
-                            if (key == KEY_PGUP) selected = offset;
-                            disp_page(entries, numEntries, offset, dformat, selected);
-                            break;
-                        case KEY_DOWN:
-                            saved = selected;
-                            while (selected + 1 < numEntries && !entries[++selected].enabled);
-                            if (entries[selected].enabled) {
-                                change_entry(entries + saved, entries + selected, dformat, entries[saved].num - entries[offset].num + 1, entries[selected].num - entries[offset].num + 1);
-                            } else {
-                                selected = saved;
-                            }
-                            if (entries[offset].num + lines - 1 <= entries[selected].num) {
-                                offset = selected;
-                                disp_page(entries, numEntries, offset, dformat, selected);
-                            }
-                            break;
-                        case KEY_PGDN:
-                            j = lines;
-                            saved = offset;
-                            while (offset + 1 < numEntries && j > 1) {
-                                j -= entries[++offset].enabled;
-                                if (entries[offset].enabled) saved = offset;
-                            }
-                            if (!entries[offset].enabled) offset = saved;
-                            selected = offset;
-                            disp_page(entries, numEntries, offset, dformat, selected);
-                            break;
-                        case KEY_ORIG:
-                            offset = 0;
-                            while (!entries[offset].enabled && ++offset < numEntries);
-                            selected = offset;
-                            disp_page(entries, numEntries, offset, dformat, selected);
-                            break;
-                        case KEY_END:
-                            offset = numEntries - 1;
-                            while (!entries[offset].enabled && offset > 0) offset--;
-                            selected = offset;
-                            disp_page(entries, numEntries, offset, dformat, selected);
-                            break;
-                        case KEY_ESC:
-                            ret = 2;
-                            running = 0;
-                            break;
-                        case '\n':
-                            if (entries[selected].enabled) {
-                                running = 0;
-                            }
-                            break;
-                        case KEY_BACK:
-                            if (searchlen) {
-                                buffer[--searchlen] = 0;
-                            }
-                            etotal = 0;
-                            offset = 0;
-                            for (j = 0; j < numEntries; j++) {
+                    if ((key >= 'a' && key <= 'z') || (key >= 'A' && key <= 'Z') || (key >= '0' && key <= '9')) {
+                        if (searchlen < sizeof(buffer) - 1) {
+                            buffer[searchlen++] = key;
+                            buffer[searchlen] = 0;
+                        }
+                        etotal = 0;
+                        offset = 0;
+                        for (j = 0; j < numEntries; j++) {
+                            if (entries[j].enabled) {
                                 if ((entries[j].enabled = strstr(entries[j].val, buffer) != NULL)) {
                                     entries[j].num = etotal++;
                                 }
@@ -328,33 +355,13 @@ int main(int argc, char** argv) {
                                     offset = j;
                                 }
                             }
-                            selected = offset;
-                            disp_page(entries, numEntries, offset, dformat, selected);
-                            break;
-                        default:
-                            if ((key >= 'a' && key <= 'z') || (key >= 'A' && key <= 'Z') || (key >= '0' && key <= '9')) {
-                                if (searchlen < sizeof(buffer) - 1) {
-                                    buffer[searchlen++] = key;
-                                    buffer[searchlen] = 0;
-                                }
-                                etotal = 0;
-                                offset = 0;
-                                for (j = 0; j < numEntries; j++) {
-                                    if (entries[j].enabled) {
-                                        if ((entries[j].enabled = strstr(entries[j].val, buffer) != NULL)) {
-                                            entries[j].num = etotal++;
-                                        }
-                                        if (!entries[offset].enabled) {
-                                            offset = j;
-                                        }
-                                    }
-                                }
-                                selected = offset;
-                                disp_page(entries, numEntries, offset, dformat, selected);
-                            }
+                        }
+                        selected = offset;
+                        disp_page(entries, numEntries, offset, dformat, selected);
                     }
-                    print_statusbar(timeout = -1, buffer[0] ? buffer : NULL, entries[offset].num + 1, entries[offset].num + lines - 1, etotal);
-                    break;
+            }
+            if (key > 0) {
+                print_statusbar(timeout = -1, buffer[0] ? buffer : NULL, entries[offset].num + 1, entries[offset].num + lines - 1, etotal);
             }
             if (winch) {
                 update_winsize();

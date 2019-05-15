@@ -74,11 +74,10 @@ if the user cancelled.
 .B choice
 
 Examples:
-.TP
 .EX
 seq 10 | choice
 .EE
-.TP
+
 .EX
 vim "$(grep -rIH query | choice -s ':'  -d '%k: %v')"
 .EE

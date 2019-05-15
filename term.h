@@ -23,6 +23,7 @@ int tty_write(const void* buf, size_t count);
 #define KEY_RIGHT ((0x1B << 16) | ('[' << 8) | 'C')
 #define KEY_LEFT  ((0x1B << 16) | ('[' << 8) | 'D')
 #define KEY_END   ((0x1B << 16) | ('[' << 8) | '4')
+#define KEY_END2  ((0x1B << 16) | ('[' << 8) | 'F')
 #define KEY_ORIG  ((0x1B << 16) | ('[' << 8) | 'H')
 #define KEY_PGUP  ((0x1B << 16) | ('[' << 8) | '5')
 #define KEY_PGDN  ((0x1B << 16) | ('[' << 8) | '6')
