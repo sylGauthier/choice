@@ -123,11 +123,6 @@ static void disp_page(const struct Entry* entries, unsigned int numEntries, unsi
     }
 }
 
-static int isin(char c, const char* s) {
-    while (*s && c != *s) s++;
-    return *s;
-}
-
 #define GET_INT(var) if (++i < argc) {var = strtol(argv[i], NULL, 10); continue;} break;
 #define GET_UINT(var) if (++i < argc) {var = strtoul(argv[i], NULL, 10); continue;} break;
 #define GET_STR(var) if (++i < argc) {var = argv[i]; continue;} break;
@@ -182,7 +177,7 @@ int main(int argc, char** argv) {
         }
         entries = entry;
         entry += numEntries++;
-        for (ptr = buffer; *ptr && !isin(*ptr, separator); ptr++);
+        for (ptr = buffer; *ptr && !strchr(separator, *ptr); ptr++);
         if (*ptr) {
             *ptr++ = 0;
         } else {
