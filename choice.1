@@ -1,0 +1,80 @@
+.TH CHOICE 1 choice\-1.0
+.SH NAME
+choice \- a small console based menu selector
+
+.SH SYNOPSIS
+.B choice
+.RB [ \-t
+.IR timeout ]
+.RB [ \-e
+.IR index ]
+.RB [ \-r
+.IR format ]
+.RB [ \-d
+.IR format ]
+.RB [ \-s
+.IR separators ]
+
+.SH DESCRIPTION
+.B choice
+is a small console based menu selector, inspired by dmenu.
+
+It reads lines from
+.BR stdin ,
+splits each line into two parts: the left part is the key, the right part is the value.
+
+The values are displayed in an interactive menu.
+The selected value is output in
+.BR STDOUT .
+
+If there is no separator in a line, the value is interpreted as both the key and the value.
+
+.SH OPTIONS
+.TP
+.BI "\-t\fR/\fP\-\-timeout " timeout
+indicates a timeout in seconds after which the default entry is automatically chosen.
+.TP
+.BI "\-e\fR/\fP\-\-default-entry " index
+selects the entry that is selected at the beginning.
+.I index
+is zero-based.
+.TP
+.BI "\-r\fR/\fP\-\-rformat " format
+specifies a format for the return value (on
+.BR stdout ).
+The default is to print the key
+.RI ( '%k' ).
+.TP
+.BI "\-d\fR/\fP\-\-dformat " format
+specifies a format for the items displayed in the menu.
+The default is to print the value
+.RI ( '%v' ).
+.TP
+.BI "\-s\fR/\fP\-\-separator " separators
+sets the characters that are separators between the key and the value.
+The line is split at the first occurrence of any of the characters in
+.IB separators .
+
+.SH RETURN VALUE
+.B choice
+returns:
+.TP
+.B 0
+if a choice was selected and output;
+.TP
+.B 1
+on error;
+.TP
+.B 2
+if the user cancelled.
+
+.SH USAGE
+.I command
+|
+.B choice
+
+Examples:
+.TP
+.B seq 10 | choice
+.TP
+.B vim "$(grep -rIH query | choice -s ":"  -d "%k: %v")"
