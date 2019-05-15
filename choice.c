@@ -256,8 +256,10 @@ int main(int argc, char** argv) {
                                 selected = saved;
                             }
                             if (offset > selected) {
-                                j = lines - 1;
-                                offset = saved = selected;
+                                offset = selected;
+                                case KEY_PGUP:
+                                saved = offset;
+                                j = lines - (key != KEY_PGUP);
                                 while (offset > 0 && j > 1) {
                                     j -= entries[--offset].enabled;
                                     if (entries[offset].enabled) saved = offset;
@@ -278,6 +280,29 @@ int main(int argc, char** argv) {
                                 offset = selected;
                                 disp_page(entries, numEntries, offset, dformat, selected);
                             }
+                            break;
+                        case KEY_PGDN:
+                            j = lines - 1;
+                            saved = offset;
+                            while (offset + 1 < numEntries && j > 0) {
+                                j -= entries[++offset].enabled;
+                                if (entries[offset].enabled) saved = offset;
+                            }
+                            if (!entries[offset].enabled) offset = saved;
+                            selected = offset;
+                            disp_page(entries, numEntries, offset, dformat, selected);
+                            break;
+                        case KEY_ORIG:
+                            offset = 0;
+                            while (!entries[offset].enabled && ++offset < numEntries);
+                            selected = offset;
+                            disp_page(entries, numEntries, offset, dformat, selected);
+                            break;
+                        case KEY_END:
+                            offset = numEntries - 1;
+                            while (!entries[offset].enabled && offset > 0) offset--;
+                            selected = offset;
+                            disp_page(entries, numEntries, offset, dformat, selected);
                             break;
                         case KEY_ESC:
                             ret = 2;
