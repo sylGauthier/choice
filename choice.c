@@ -245,6 +245,10 @@ int main(int argc, char** argv) {
                     }
                     break;
 
+                case 21:
+                    j = lines / 2;
+                    goto scroll_up;
+
                 case KEY_UP:
                     saved = selected;
                     while (selected > 0 && !entries[--selected].enabled);
@@ -258,14 +262,15 @@ int main(int argc, char** argv) {
                     }
 
                 case KEY_PGUP:
-                    saved = offset;
                     j = lines;
+scroll_up:
+                    saved = offset;
                     while (offset > 0 && j > 1) {
                         j -= entries[--offset].enabled;
                         if (entries[offset].enabled) saved = offset;
                     }
                     if (!entries[offset].enabled) offset = saved;
-                    if (key == KEY_PGUP) selected = offset;
+                    if (key != KEY_UP) selected = offset;
                     disp_page(entries, numEntries, offset, dformat, selected);
                     break;
 
@@ -283,8 +288,13 @@ int main(int argc, char** argv) {
                     }
                     break;
 
+                case 4:
+                    j = lines / 2;
+                    goto scroll_down;
+
                 case KEY_PGDN:
                     j = lines;
+scroll_down:
                     saved = offset;
                     while (offset + 1 < numEntries && j > 1) {
                         j -= entries[++offset].enabled;
@@ -310,6 +320,7 @@ int main(int argc, char** argv) {
                     break;
 
                 case KEY_ESC:
+                case 3: /* <C-c> */
                     ret = 2;
                     running = 0;
                     break;
