@@ -14,6 +14,7 @@ choice \- a small console based menu selector
 .IR format ]
 .RB [ \-s
 .IR separators ]
+.RB [ \-R ]
 
 .SH DESCRIPTION
 .B choice
@@ -54,6 +55,14 @@ The default is to print the value
 sets the characters that are separators between the key and the value.
 The line is split at the first occurrence of any of the characters in
 .IB separators .
+.TP
+.BI "\-R\fR/\fP\-\-realtime "
+activates realtime mode. In this mode, entries are printed to
+.B stdout
+each time and as soon as the selected entry changes.
+Entries are printed with the format specified with
+.BR \-r ,
+as the returned selection in non-realtime mode.
 
 .SH RETURN VALUE
 .B choice

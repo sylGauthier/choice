@@ -19,7 +19,7 @@ static void sigwinch(int unused) {
 }
 
 static void usage(const char* prog) {
-    printf("Usage: %s [-t timeout] [-e index] [-r format] [-d format] [-s separators]\n", prog);
+    printf("Usage: %s [-t timeout] [-e index] [-r format] [-d format] [-s separators] [-R]\n", prog);
 }
 
 static void print_statusbar(int timeout, const char* searchstring, unsigned int start, unsigned int end, unsigned int total) {
@@ -139,10 +139,11 @@ int main(int argc, char** argv) {
         {"--rformat", "-r"},
         {"--dformat", "-d"},
         {"--separator", "-s"},
-        {"--help", "-h"},
+        {"--realtime", "-R"},
+        {"--help", "-h"}
     };
-    int timeout = -1;
-    const char *rformat = "%k", *dformat = "%v", *separator = " ", *arg;
+    int timeout = -1, realtime = 0;
+    const char *rformat = "%k\n", *dformat = "%v", *separator = " ", *arg;
     char *ptr, *end;
     int i, ret = 0;
     size_t size;
@@ -165,6 +166,7 @@ int main(int argc, char** argv) {
                     case 'r': GET_STR(rformat);
                     case 'd': GET_STR(dformat);
                     case 's': GET_STR(separator);
+                    case 'R': realtime = 1; continue;
                     case 'h': usage(argv[0]); return 0;
                 }
                 break;
@@ -215,11 +217,7 @@ int main(int argc, char** argv) {
         fprintf(stderr, "Error: failed to init term\n");
         ret = 1;
     }
-    cursor_hide();
-    alternate_screen();
 
-    buffer[searchlen = 0] = 0;
-    disp_page(entries, numEntries, offset, dformat, selected);
     if (!ret) {
         struct timeval t;
         int running = 1;
@@ -228,7 +226,16 @@ int main(int argc, char** argv) {
         t.tv_usec = 0;
 
         sigwinch(0);
+        cursor_hide();
+        alternate_screen();
+
+        buffer[searchlen = 0] = 0;
+        disp_page(entries, numEntries, offset, dformat, selected);
         print_statusbar(timeout, NULL, offset + 1, offset + lines - 1, numEntries);
+        if (realtime) {
+            format_entry(entries + selected, rformat, 1);
+        }
+
         while (running) {
             switch (key = get_key(&t)) {
                 case KEY_ERROR:
@@ -254,6 +261,9 @@ int main(int argc, char** argv) {
                     while (selected > 0 && !entries[--selected].enabled);
                     if (entries[selected].enabled) {
                         change_entry(entries + saved, entries + selected, dformat, entries[saved].num - entries[offset].num + 1, entries[selected].num - entries[offset].num + 1);
+                        if (realtime && selected != saved) {
+                            format_entry(entries + selected, rformat, 1);
+                        }
                     } else {
                         selected = saved;
                     }
@@ -270,7 +280,12 @@ scroll_up:
                         if (entries[offset].enabled) saved = offset;
                     }
                     if (!entries[offset].enabled) offset = saved;
-                    if (key != KEY_UP) selected = offset;
+                    if (key != KEY_UP) {
+                        if (realtime && selected != offset) {
+                            format_entry(entries + offset, rformat, 1);
+                        }
+                        selected = offset;
+                    }
                     disp_page(entries, numEntries, offset, dformat, selected);
                     break;
 
@@ -279,6 +294,9 @@ scroll_up:
                     while (selected + 1 < numEntries && !entries[++selected].enabled);
                     if (entries[selected].enabled) {
                         change_entry(entries + saved, entries + selected, dformat, entries[saved].num - entries[offset].num + 1, entries[selected].num - entries[offset].num + 1);
+                        if (realtime && selected != saved) {
+                            format_entry(entries + selected, rformat, 1);
+                        }
                     } else {
                         selected = saved;
                     }
@@ -301,6 +319,9 @@ scroll_down:
                         if (entries[offset].enabled) saved = offset;
                     }
                     if (!entries[offset].enabled) offset = saved;
+                    if (realtime && selected != offset) {
+                        format_entry(entries + offset, rformat, 1);
+                    }
                     selected = offset;
                     disp_page(entries, numEntries, offset, dformat, selected);
                     break;
@@ -308,6 +329,9 @@ scroll_down:
                 case KEY_ORIG:
                     offset = 0;
                     while (!entries[offset].enabled && ++offset < numEntries);
+                    if (realtime && selected != offset) {
+                        format_entry(entries + offset, rformat, 1);
+                    }
                     selected = offset;
                     disp_page(entries, numEntries, offset, dformat, selected);
                     break;
@@ -315,6 +339,9 @@ scroll_down:
                 case KEY_END: case KEY_END2:
                     offset = numEntries - 1;
                     while (!entries[offset].enabled && offset > 0) offset--;
+                    if (realtime && selected != offset) {
+                        format_entry(entries + offset, rformat, 1);
+                    }
                     selected = offset;
                     disp_page(entries, numEntries, offset, dformat, selected);
                     break;
@@ -345,6 +372,9 @@ scroll_down:
                             offset = j;
                         }
                     }
+                    if (realtime && selected != offset) {
+                        format_entry(entries + offset, rformat, 1);
+                    }
                     selected = offset;
                     disp_page(entries, numEntries, offset, dformat, selected);
                     break;
@@ -367,6 +397,9 @@ scroll_down:
                                 }
                             }
                         }
+                        if (realtime && selected != offset) {
+                            format_entry(entries + offset, rformat, 1);
+                        }
                         selected = offset;
                         disp_page(entries, numEntries, offset, dformat, selected);
                     }
@@ -381,15 +414,15 @@ scroll_down:
                 winch = 0;
             }
         }
+
+        erase_display(2);
+        color_positive();
+        cursor_pos(1, 1);
+        cursor_show();
+        normal_screen();
     }
 
-    erase_display(2);
-    color_positive();
-    cursor_pos(1, 1);
-    cursor_show();
-    normal_screen();
-
-    if (!ret) {
+    if (!ret && !realtime) {
         ret = !format_entry(entries + selected, rformat, 1);
     }
 
