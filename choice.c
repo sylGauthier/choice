@@ -19,7 +19,7 @@ static void sigwinch(int unused) {
 }
 
 static void usage(const char* prog) {
-    printf("Usage: %s [-t timeout] [-e index] [-r format] [-d format] [-s separators] [-R]\n", prog);
+    printf("Usage: %s [-t timeout] [-e index] [-r format] [-d format] [-s separators] [-R] [-W width] [-H height]\n", prog);
 }
 
 static void print_statusbar(int timeout, const char* searchstring, unsigned int start, unsigned int end, unsigned int total) {
@@ -140,6 +140,8 @@ int main(int argc, char** argv) {
         {"--dformat", "-d"},
         {"--separator", "-s"},
         {"--realtime", "-R"},
+        {"--width", "-W"},
+        {"--height", "-H"},
         {"--help", "-h"}
     };
     int timeout = -1, realtime = 0;
@@ -148,7 +150,7 @@ int main(int argc, char** argv) {
     int i, ret = 0;
     size_t size;
     struct Entry *entries = NULL, *entry;
-    unsigned int j, numEntries = 0, offset, selected = 0, saved, searchlen, etotal;
+    unsigned int j, numEntries = 0, offset, selected = 0, saved, searchlen, etotal, width = -1, height = -1;
 
     for (i = 1; i < argc; i++) {
         arg = argv[i];
@@ -167,6 +169,8 @@ int main(int argc, char** argv) {
                     case 'd': GET_STR(dformat);
                     case 's': GET_STR(separator);
                     case 'R': realtime = 1; continue;
+                    case 'W': GET_UINT(width);
+                    case 'H': GET_UINT(height);
                     case 'h': usage(argv[0]); return 0;
                 }
                 break;
@@ -230,13 +234,19 @@ int main(int argc, char** argv) {
         alternate_screen();
 
         buffer[searchlen = 0] = 0;
-        disp_page(entries, numEntries, offset, dformat, selected);
-        print_statusbar(timeout, NULL, offset + 1, offset + lines - 1, numEntries);
         if (realtime) {
             format_entry(entries + selected, rformat, 1);
         }
 
         while (running) {
+            if (winch) {
+                update_winsize();
+                if (cols > width) cols = width;
+                if (lines > height) lines = height;
+                disp_page(entries, numEntries, offset, dformat, selected);
+                print_statusbar(timeout, buffer[0] ? buffer : NULL, entries[offset].num + 1, entries[offset].num + lines - 1, etotal);
+                winch = 0;
+            }
             switch (key = get_key(&t)) {
                 case KEY_ERROR:
                     fprintf(stderr, "Warning: failed to get key\n");
@@ -406,12 +416,6 @@ scroll_down:
             }
             if (key > 0) {
                 print_statusbar(timeout = -1, buffer[0] ? buffer : NULL, entries[offset].num + 1, entries[offset].num + lines - 1, etotal);
-            }
-            if (winch) {
-                update_winsize();
-                disp_page(entries, numEntries, offset, dformat, selected);
-                print_statusbar(timeout, buffer[0] ? buffer : NULL, entries[offset].num + 1, entries[offset].num + lines - 1, etotal);
-                winch = 0;
             }
         }
 

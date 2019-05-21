@@ -15,6 +15,10 @@ choice \- a small console based menu selector
 .RB [ \-s
 .IR separators ]
 .RB [ \-R ]
+.RB [ \-W
+.IR width ]
+.RB [ \-h
+.IR height ]
 
 .SH DESCRIPTION
 .B choice
@@ -63,6 +67,12 @@ each time and as soon as the selected entry changes.
 Entries are printed with the format specified with
 .BR \-r ,
 as the returned selection in non-realtime mode.
+.TP
+.BI "\-W\fR/\fP\-\-width " width
+sets maximum menu width (columns).
+.TP
+.BI "\-H\fR/\fP\-\-height " height
+sets maximum menu height (lines).
 
 .SH RETURN VALUE
 .B choice
