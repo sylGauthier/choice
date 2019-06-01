@@ -4,6 +4,10 @@
 #include <signal.h>
 #include <unistd.h>
 #include <sys/select.h>
+#ifdef _XOPEN_SOURCE
+#include <wchar.h>
+#include <locale.h>
+#endif
 #include "term.h"
 
 struct Entry {
@@ -56,8 +60,8 @@ static void print_statusbar(int timeout, const char* searchstring, unsigned int 
 }
 
 static int format_entry(const struct Entry* entry, const char* format, int r) {
-    unsigned int p = 1;
-    const char* str = format;
+    unsigned int p = 1, cw;
+    const char *str = format, *start, *end;
     int fd = r ? STDOUT_FILENO : tty;
     int dots = 1;
 
@@ -80,16 +84,40 @@ static int format_entry(const struct Entry* entry, const char* format, int r) {
             } else if (r) {
                 if (write(fd, str++, 1) != 1) return 0;
             } else {
-                char c = *str++;
-                if (c == '\t') c = ' ';
-                if (p >= cols) {
-                    if (dots) {
-                        if (write(fd, "\x1B[2D...", 7) != 7) return 0;
+                if (*str == '\t') {
+                    start = "    ";
+                    end = start + (cw = ((4 - (p % 4)) % 4));
+                    str++;
+                } else {
+                    unsigned long u = (unsigned char)(*str);
+                    int tmp = 7;
+                    while ((u & (1UL << tmp)) && tmp >= 0) u &= ~(1UL << tmp--);
+                    for (start = str++; *str && (((unsigned char)(*str)) & 0xC0) == 0x80; str++) u = (u << 6) | (((unsigned char)(*str)) & 0x3F);
+                    end = str;
+#ifdef _XOPEN_SOURCE
+                    tmp = wcwidth(u);
+                    cw = (tmp < 0) ? (end - start) : tmp;
+#else
+                    ((void)u);
+                    cw = (end - start);
+#endif
+                }
+                if (p + cw > cols) {
+                    if (dots && cols >= p) {
+                        char buffer[17]; /* this is to silence a dumb gcc warning, 7 is fine */
+                        int tmp = cols - p;
+                        if (tmp > 2) tmp = 2;
+                        sprintf(buffer, "\x1B[%dD...", 2 - tmp);
+                        tmp = cols;
+                        if (tmp > 3) tmp = 3;
+                        tmp += 4;
+                        if (write(fd, buffer, tmp) != tmp) return 0;
                         dots = 0;
                     }
+                    p = cols;
                 } else {
-                    if (write(fd, &c, 1) != 1) return 0;
-                    p++;
+                    if (write(fd, start, end - start) != (end - start)) return 0;
+                    p += cw;
                 }
             }
         }
@@ -151,6 +179,10 @@ int main(int argc, char** argv) {
     size_t size;
     struct Entry *entries = NULL, *entry;
     unsigned int j, numEntries = 0, offset, selected = 0, saved, searchlen, etotal, width = -1, height = -1;
+
+#ifdef _XOPEN_SOURCE
+    setlocale(LC_CTYPE, "");
+#endif
 
     for (i = 1; i < argc; i++) {
         arg = argv[i];
