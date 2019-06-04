@@ -298,6 +298,8 @@ int main(int argc, char** argv) {
                     j = lines / 2;
                     goto scroll_up;
 
+                case 25:
+                    key = KEY_UP;
                 case KEY_UP:
                     saved = selected;
                     while (selected > 0 && !entries[--selected].enabled);
@@ -332,6 +334,7 @@ scroll_up:
                     break;
 
                 case KEY_DOWN:
+                case 5:
                     saved = selected;
                     while (selected + 1 < numEntries && !entries[++selected].enabled);
                     if (entries[selected].enabled) {
