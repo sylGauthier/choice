@@ -389,6 +389,11 @@ scroll_down:
                     break;
 
                 case KEY_ESC:
+                    if (searchlen) {
+                        buffer[searchlen = 0] = 0;
+                        goto update_search;
+                    }
+
                 case 3: /* <C-c> */
                     ret = 2;
                     running = 0;
@@ -404,6 +409,7 @@ scroll_down:
                     if (searchlen) {
                         buffer[--searchlen] = 0;
                     }
+update_search:
                     etotal = 0;
                     offset = 0;
                     for (j = 0; j < numEntries; j++) {
