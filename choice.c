@@ -249,12 +249,12 @@ int main(int argc, char** argv) {
         selected = numEntries - 1;
     }
     etotal = numEntries;
-    offset = selected;
 
     if (!ret && !term_init()) {
         fprintf(stderr, "Error: failed to init term\n");
         ret = 1;
     }
+    offset = (selected / (lines - 1)) * (lines - 1);
 
     if (!ret) {
         struct timeval t;
