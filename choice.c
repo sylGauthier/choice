@@ -433,7 +433,7 @@ update_search:
                     break;
 
                 default:
-                    if ((key >= 'a' && key <= 'z') || (key >= 'A' && key <= 'Z') || (key >= '0' && key <= '9')) {
+                    if (key >= 0x20 && key < 0x7E) {
                         if (searchlen < sizeof(buffer) - 1) {
                             buffer[searchlen++] = key;
                             buffer[searchlen] = 0;
