@@ -74,6 +74,18 @@ sets maximum menu width (columns).
 .BI "\-H\fR/\fP\-\-height " height
 sets maximum menu height (lines).
 
+.SH FORMAT
+The format arguments are format strings used to format one entry. The following modifiers can be used:
+.TP
+.B %k
+The key of the entry.
+.TP
+.B %v
+The value of the entry.
+.TP
+.B %n
+The index (zero-based) of the entry.
+
 .SH RETURN VALUE
 .B choice
 returns:
