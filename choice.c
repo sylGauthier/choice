@@ -396,7 +396,7 @@ scroll_down:
                 case KEY_ESC:
                     if (searchlen) {
                         buffer[searchlen = 0] = 0;
-                        goto update_search;
+                        goto update_search_back;
                     }
 
                 case 3: /* <C-c> */
@@ -414,11 +414,11 @@ scroll_down:
                     if (searchlen) {
                         buffer[--searchlen] = 0;
                     }
-update_search:
+update_search_back:
                     etotal = 0;
                     offset = 0;
                     for (j = 0; j < numEntries; j++) {
-                        if ((entries[j].enabled = strstr(entries[j].val, buffer) != NULL)) {
+                        if (entries[j].enabled || (entries[j].enabled = strstr(entries[j].val, buffer) != NULL)) {
                             entries[j].snum = etotal++;
                         }
                         if (!entries[offset].enabled) {
