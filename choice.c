@@ -12,7 +12,7 @@
 
 struct Entry {
     char *key, *val;
-    unsigned int num;
+    unsigned int num, snum;
     int enabled;
 };
 
@@ -60,6 +60,7 @@ static void print_statusbar(int timeout, const char* searchstring, unsigned int 
 }
 
 static int format_entry(const struct Entry* entry, const char* format, int r) {
+    char buffer[32];
     unsigned int p = 1, cw;
     const char *str = format, *start, *end;
     int fd = r ? STDOUT_FILENO : tty;
@@ -80,6 +81,7 @@ static int format_entry(const struct Entry* entry, const char* format, int r) {
                 switch (*++str) {
                     case 'k': format = str + 1; str = entry->key; break;
                     case 'v': format = str + 1; str = entry->val; break;
+                    case 'n': format = str + 1; str = buffer; sprintf(buffer, "%u", entry->num); break;
                 }
             } else if (r) {
                 if (write(fd, str++, 1) != 1) return 0;
@@ -215,7 +217,7 @@ int main(int argc, char** argv) {
         }
     }
 
-    while (fgets(buffer, sizeof(buffer), stdin)) {
+    while (numEntries < ((unsigned int)-1) && fgets(buffer, sizeof(buffer), stdin)) {
         if (!(entry = realloc(entries, (numEntries + 1) * sizeof(*entry)))) {
             ret = 1;
             break;
@@ -237,7 +239,7 @@ int main(int argc, char** argv) {
         }
         memcpy(entry->key, buffer, size);
         entry->val = entry->key + (ptr - buffer);
-        entry->num = numEntries - 1;
+        entry->num = entry->snum = numEntries - 1;
         entry->enabled = 1;
     }
     if (!numEntries) {
@@ -276,7 +278,7 @@ int main(int argc, char** argv) {
                 if (cols > width) cols = width;
                 if (lines > height) lines = height;
                 disp_page(entries, numEntries, offset, dformat, selected);
-                print_statusbar(timeout, buffer[0] ? buffer : NULL, entries[offset].num + 1, entries[offset].num + lines - 1, etotal);
+                print_statusbar(timeout, buffer[0] ? buffer : NULL, entries[offset].snum + 1, entries[offset].snum + lines - 1, etotal);
                 winch = 0;
             }
             switch (key = get_key(&t)) {
@@ -304,7 +306,7 @@ int main(int argc, char** argv) {
                     saved = selected;
                     while (selected > 0 && !entries[--selected].enabled);
                     if (entries[selected].enabled) {
-                        change_entry(entries + saved, entries + selected, dformat, entries[saved].num - entries[offset].num + 1, entries[selected].num - entries[offset].num + 1);
+                        change_entry(entries + saved, entries + selected, dformat, entries[saved].snum - entries[offset].snum + 1, entries[selected].snum - entries[offset].snum + 1);
                         if (realtime && selected != saved) {
                             format_entry(entries + selected, rformat, 1);
                         }
@@ -338,14 +340,14 @@ scroll_up:
                     saved = selected;
                     while (selected + 1 < numEntries && !entries[++selected].enabled);
                     if (entries[selected].enabled) {
-                        change_entry(entries + saved, entries + selected, dformat, entries[saved].num - entries[offset].num + 1, entries[selected].num - entries[offset].num + 1);
+                        change_entry(entries + saved, entries + selected, dformat, entries[saved].snum - entries[offset].snum + 1, entries[selected].snum - entries[offset].snum + 1);
                         if (realtime && selected != saved) {
                             format_entry(entries + selected, rformat, 1);
                         }
                     } else {
                         selected = saved;
                     }
-                    if (entries[offset].num + lines - 1 <= entries[selected].num) {
+                    if (entries[offset].snum + lines - 1 <= entries[selected].snum) {
                         offset = selected;
                         disp_page(entries, numEntries, offset, dformat, selected);
                     }
@@ -417,7 +419,7 @@ update_search:
                     offset = 0;
                     for (j = 0; j < numEntries; j++) {
                         if ((entries[j].enabled = strstr(entries[j].val, buffer) != NULL)) {
-                            entries[j].num = etotal++;
+                            entries[j].snum = etotal++;
                         }
                         if (!entries[offset].enabled) {
                             offset = j;
@@ -441,7 +443,7 @@ update_search:
                         for (j = 0; j < numEntries; j++) {
                             if (entries[j].enabled) {
                                 if ((entries[j].enabled = strstr(entries[j].val, buffer) != NULL)) {
-                                    entries[j].num = etotal++;
+                                    entries[j].snum = etotal++;
                                 }
                                 if (!entries[offset].enabled) {
                                     offset = j;
@@ -456,7 +458,7 @@ update_search:
                     }
             }
             if (key > 0) {
-                print_statusbar(timeout = -1, buffer[0] ? buffer : NULL, entries[offset].num + 1, entries[offset].num + lines - 1, etotal);
+                print_statusbar(timeout = -1, buffer[0] ? buffer : NULL, entries[offset].snum + 1, entries[offset].snum + lines - 1, etotal);
             }
         }
 
