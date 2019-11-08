@@ -230,7 +230,7 @@ int main(int argc, char** argv) {
         } else {
             ptr = buffer;
         }
-        for (end = ptr; end && *end != '\n'; end++);
+        for (end = ptr; *end && *end != '\n'; end++);
         *end = 0;
         size = (end - buffer) + 1;
         if (!(entry->key = malloc(size))) {
