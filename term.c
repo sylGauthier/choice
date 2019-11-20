@@ -36,8 +36,9 @@ int term_init(void) {
     }
     if (tcgetattr(tty, &origterm) || atexit(term_cleanup)) return 0;
     tmp = origterm;
+    tmp.c_iflag |= ICRNL;
     tmp.c_lflag &= ~(ECHO | ICANON | IEXTEN | ISIG);
-    return !tcsetattr(tty, TCSAFLUSH, &tmp) && update_winsize();
+    return !tcsetattr(tty, TCSAFLUSH, &tmp) && write(tty, "\x1B[?1l", 5) == 5 && update_winsize();
 }
 
 int cursor_pos(unsigned int x, unsigned int y) {
