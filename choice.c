@@ -23,7 +23,7 @@ static void sigwinch(int unused) {
 }
 
 static void usage(const char* prog) {
-    printf("Usage: %s [-t timeout] [-e index] [-r format] [-d format] [-s separators] [-R] [-W width] [-H height]\n", prog);
+    printf("Usage: %s [-t timeout] [-e index] [-S search] [-r format] [-d format] [-s separators] [-R] [-W width] [-H height]\n", prog);
 }
 
 static void print_statusbar(int timeout, const char* searchstring, unsigned int start, unsigned int end, unsigned int total) {
@@ -175,7 +175,7 @@ int main(int argc, char** argv) {
         {"--help", "-h"}
     };
     int timeout = -1, realtime = 0;
-    const char *rformat = "%k\n", *dformat = "%v", *separator = " ", *arg;
+    const char *rformat = "%k\n", *dformat = "%v", *separator = " ", *searcharg = NULL, *arg;
     char *ptr, *end;
     int i, ret = 0;
     size_t size;
@@ -199,6 +199,7 @@ int main(int argc, char** argv) {
                 switch (*arg) {
                     case 't': GET_INT(timeout);
                     case 'e': GET_UINT(selected);
+                    case 'S': GET_STR(searcharg);
                     case 'r': GET_STR(rformat);
                     case 'd': GET_STR(dformat);
                     case 's': GET_STR(separator);
@@ -217,6 +218,7 @@ int main(int argc, char** argv) {
         }
     }
 
+    etotal = 0;
     while (numEntries < ((unsigned int)-1) && fgets(buffer, sizeof(buffer), stdin)) {
         if (!(entry = realloc(entries, (numEntries + 1) * sizeof(*entry)))) {
             ret = 1;
@@ -239,8 +241,10 @@ int main(int argc, char** argv) {
         }
         memcpy(entry->key, buffer, size);
         entry->val = entry->key + (ptr - buffer);
-        entry->num = entry->snum = numEntries - 1;
-        entry->enabled = 1;
+        entry->num = numEntries - 1;
+        entry->snum = etotal;
+        entry->enabled = !searcharg || (strstr(entry->val, searcharg) != NULL);
+        etotal += entry->enabled;
     }
     if (!numEntries) {
         fprintf(stderr, "Error: no entries\n");
@@ -248,7 +252,6 @@ int main(int argc, char** argv) {
     } else if (selected >= numEntries) {
         selected = numEntries - 1;
     }
-    etotal = numEntries;
 
     if (!ret && !term_init()) {
         fprintf(stderr, "Error: failed to init term\n");
@@ -267,7 +270,15 @@ int main(int argc, char** argv) {
         cursor_hide();
         alternate_screen();
 
-        buffer[searchlen = 0] = 0;
+        if (searcharg) {
+            size_t n = strlen(searcharg);
+            if (n >= sizeof(buffer)) n = (sizeof(buffer) - 1);
+            memcpy(buffer, searcharg, n);
+            searchlen = n;
+        } else {
+            searchlen = 0;
+        }
+        buffer[searchlen] = 0;
         if (realtime) {
             format_entry(entries + selected, rformat, 1);
         }
