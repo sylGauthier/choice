@@ -257,7 +257,14 @@ int main(int argc, char** argv) {
         fprintf(stderr, "Error: failed to init term\n");
         ret = 1;
     }
-    offset = (selected / (lines - 1)) * (lines - 1);
+    if (lines <= 1) {
+        offset = selected;
+    } else {
+        offset = (selected / (lines - 1)) * (lines - 1);
+    }
+    if (offset >= numEntries) {
+        offset = numEntries - 1;
+    }
 
     if (!ret) {
         struct timeval t;
