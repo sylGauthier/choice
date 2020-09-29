@@ -257,14 +257,6 @@ int main(int argc, char** argv) {
         fprintf(stderr, "Error: failed to init term\n");
         ret = 1;
     }
-    if (lines <= 1) {
-        offset = selected;
-    } else {
-        offset = (selected / (lines - 1)) * (lines - 1);
-    }
-    if (offset >= numEntries) {
-        offset = numEntries - 1;
-    }
 
     if (!ret) {
         struct timeval t;
@@ -272,6 +264,35 @@ int main(int argc, char** argv) {
         long key;
         t.tv_sec = 1;
         t.tv_usec = 0;
+
+        if (!entries[selected].enabled) {
+            unsigned int before = selected, after = selected;
+            while (++after < numEntries && !entries[after].enabled);
+            while (before > 0 && !entries[--before].enabled);
+            switch (2 * (after < numEntries) + (entries[before].enabled != 0)) {
+                case 3:
+                    if (after - selected < selected - before) {
+                        selected = after;
+                    } else {
+                        selected = before;
+                    }
+                    break;
+                case 2:
+                    selected = after;
+                    break;
+                case 1:
+                    selected = before;
+                    break;
+            }
+        }
+        if (lines <= 1) {
+            offset = selected;
+        } else {
+            offset = (selected / (lines - 1)) * (lines - 1);
+        }
+        if (offset >= numEntries) {
+            offset = numEntries - 1;
+        }
 
         sigwinch(0);
         cursor_hide();
