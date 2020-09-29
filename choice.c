@@ -12,7 +12,7 @@
 
 struct Entry {
     char *key, *val;
-    unsigned int num, snum;
+    unsigned int snum;
     int enabled;
 };
 
@@ -81,7 +81,6 @@ static int format_entry(const struct Entry* entry, const char* format, int r) {
                 switch (*++str) {
                     case 'k': format = str + 1; str = entry->key; break;
                     case 'v': format = str + 1; str = entry->val; break;
-                    case 'n': format = str + 1; str = buffer; sprintf(buffer, "%u", entry->num); break;
                 }
             } else if (r) {
                 if (write(fd, str++, 1) != 1) return 0;
@@ -241,7 +240,6 @@ int main(int argc, char** argv) {
         }
         memcpy(entry->key, buffer, size);
         entry->val = entry->key + (ptr - buffer);
-        entry->num = numEntries - 1;
         entry->snum = etotal;
         entry->enabled = !searcharg || (strstr(entry->val, searcharg) != NULL);
         etotal += entry->enabled;
