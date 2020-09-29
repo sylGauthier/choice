@@ -334,11 +334,11 @@ int main(int argc, char** argv) {
                     }
                     break;
 
-                case 21:
+                case 21: /* <C-u> */
                     j = lines / 2;
                     goto scroll_up;
 
-                case 25:
+                case 25: /* mouse wheel up */
                     key = KEY_UP;
                 case KEY_UP:
                     saved = selected;
@@ -376,7 +376,7 @@ scroll_up:
                     break;
 
                 case KEY_DOWN:
-                case 5:
+                case 5: /* mouse wheel down */
                     saved = selected;
                     while (selected + 1U < numEntries && !entries[++selected].enabled);
                     if (entries[selected].enabled) {
@@ -393,7 +393,7 @@ scroll_up:
                     }
                     break;
 
-                case 4:
+                case 4: /* <C-d> */
                     j = lines / 2;
                     goto scroll_down;
 
