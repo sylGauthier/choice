@@ -455,6 +455,8 @@ scroll_down:
                 case KEY_BACK:
                     if (searchlen) {
                         buffer[--searchlen] = 0;
+                    } else {
+                        break;
                     }
 update_search_back:
                     etotal = 0;
@@ -479,6 +481,8 @@ update_search_back:
                         if (searchlen < sizeof(buffer) - 1U) {
                             buffer[searchlen++] = key;
                             buffer[searchlen] = 0;
+                        } else {
+                            break;
                         }
                         etotal = 0;
                         offset = 0;
