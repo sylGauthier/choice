@@ -29,7 +29,7 @@ static void usage(const char* prog) {
 static void print_statusbar(int timeout, const char* searchstring, unsigned int start, unsigned int end, unsigned int total) {
     char buffer[128];
     int n;
-    unsigned int r = cols - 1;
+    unsigned int r = cols - 1U;
 
     cursor_pos(1, lines);
     erase_in_line(2);
@@ -234,7 +234,7 @@ int main(int argc, char** argv) {
         }
         for (end = ptr; *end && *end != '\n'; end++);
         *end = 0;
-        size = (end - buffer) + 1;
+        size = (end - buffer) + 1U;
         if (!(entry->key = malloc(size))) {
             ret = 1;
             break;
@@ -249,7 +249,7 @@ int main(int argc, char** argv) {
         fprintf(stderr, "Error: no entries\n");
         ret = 1;
     } else if (selected >= numEntries) {
-        selected = numEntries - 1;
+        selected = numEntries - 1U;
     }
 
     if (!ret && !term_init()) {
@@ -284,13 +284,13 @@ int main(int argc, char** argv) {
                     break;
             }
         }
-        if (lines <= 1) {
+        if (lines <= 1U) {
             offset = selected;
         } else {
-            offset = (selected / (lines - 1)) * (lines - 1);
+            offset = (selected / (lines - 1U)) * (lines - 1U);
         }
         if (offset >= numEntries) {
-            offset = numEntries - 1;
+            offset = numEntries - 1U;
         }
 
         sigwinch(0);
@@ -299,7 +299,7 @@ int main(int argc, char** argv) {
 
         if (searcharg) {
             size_t n = strlen(searcharg);
-            if (n >= sizeof(buffer)) n = (sizeof(buffer) - 1);
+            if (n >= sizeof(buffer)) n = (sizeof(buffer) - 1U);
             memcpy(buffer, searcharg, n);
             searchlen = n;
         } else {
@@ -316,7 +316,7 @@ int main(int argc, char** argv) {
                 if (cols > width) cols = width;
                 if (lines > height) lines = height;
                 disp_page(entries, numEntries, offset, dformat, selected);
-                print_statusbar(timeout, buffer[0] ? buffer : NULL, entries[offset].snum + 1, entries[offset].snum + lines - 1, etotal);
+                print_statusbar(timeout, buffer[0] ? buffer : NULL, entries[offset].snum + 1U, entries[offset].snum + lines - 1U, etotal);
                 winch = 0;
             }
             switch (key = get_key(&t)) {
@@ -327,7 +327,7 @@ int main(int argc, char** argv) {
                 case KEY_TIMEOUT:
                     if (timeout > 0) {
                         if (--timeout) {
-                            print_statusbar(timeout, NULL, offset + 1, offset + lines - 1, numEntries);
+                            print_statusbar(timeout, NULL, offset + 1U, offset + lines - 1U, numEntries);
                         } else {
                             running = 0;
                         }
@@ -344,7 +344,7 @@ int main(int argc, char** argv) {
                     saved = selected;
                     while (selected > 0 && !entries[--selected].enabled);
                     if (entries[selected].enabled) {
-                        change_entry(entries + saved, entries + selected, dformat, entries[saved].snum - entries[offset].snum + 1, entries[selected].snum - entries[offset].snum + 1);
+                        change_entry(entries + saved, entries + selected, dformat, entries[saved].snum - entries[offset].snum + 1U, entries[selected].snum - entries[offset].snum + 1U);
                         if (realtime && selected != saved) {
                             format_entry(entries + selected, rformat, 1);
                         }
@@ -359,9 +359,11 @@ int main(int argc, char** argv) {
                     j = lines;
 scroll_up:
                     saved = offset;
-                    while (offset > 0 && j > 1) {
-                        j -= entries[--offset].enabled;
-                        if (entries[offset].enabled) saved = offset;
+                    while (offset > 0 && j > 1U) {
+                        if (entries[--offset].enabled) {
+                            saved = offset;
+                            j--;
+                        }
                     }
                     if (!entries[offset].enabled) offset = saved;
                     if (key != KEY_UP) {
@@ -376,16 +378,16 @@ scroll_up:
                 case KEY_DOWN:
                 case 5:
                     saved = selected;
-                    while (selected + 1 < numEntries && !entries[++selected].enabled);
+                    while (selected + 1U < numEntries && !entries[++selected].enabled);
                     if (entries[selected].enabled) {
-                        change_entry(entries + saved, entries + selected, dformat, entries[saved].snum - entries[offset].snum + 1, entries[selected].snum - entries[offset].snum + 1);
+                        change_entry(entries + saved, entries + selected, dformat, entries[saved].snum - entries[offset].snum + 1U, entries[selected].snum - entries[offset].snum + 1U);
                         if (realtime && selected != saved) {
                             format_entry(entries + selected, rformat, 1);
                         }
                     } else {
                         selected = saved;
                     }
-                    if (entries[offset].snum + lines - 1 <= entries[selected].snum) {
+                    if (entries[offset].snum + lines - 1U <= entries[selected].snum) {
                         offset = selected;
                         disp_page(entries, numEntries, offset, dformat, selected);
                     }
@@ -399,9 +401,11 @@ scroll_up:
                     j = lines;
 scroll_down:
                     saved = offset;
-                    while (offset + 1 < numEntries && j > 1) {
-                        j -= entries[++offset].enabled;
-                        if (entries[offset].enabled) saved = offset;
+                    while (offset + 1U < numEntries && j > 1U) {
+                        if (entries[++offset].enabled) {
+                            saved = offset;
+                            j--;
+                        }
                     }
                     if (!entries[offset].enabled) offset = saved;
                     if (realtime && selected != offset) {
@@ -422,7 +426,7 @@ scroll_down:
                     break;
 
                 case KEY_END: case KEY_END2:
-                    offset = numEntries - 1;
+                    offset = numEntries - 1U;
                     while (!entries[offset].enabled && offset > 0) offset--;
                     if (realtime && selected != offset) {
                         format_entry(entries + offset, rformat, 1);
@@ -472,7 +476,7 @@ update_search_back:
 
                 default:
                     if (key >= 0x20 && key < 0x7E) {
-                        if (searchlen < sizeof(buffer) - 1) {
+                        if (searchlen < sizeof(buffer) - 1U) {
                             buffer[searchlen++] = key;
                             buffer[searchlen] = 0;
                         }
@@ -496,7 +500,7 @@ update_search_back:
                     }
             }
             if (key > 0) {
-                print_statusbar(timeout = -1, buffer[0] ? buffer : NULL, entries[offset].snum + 1, entries[offset].snum + lines - 1, etotal);
+                print_statusbar(timeout = -1, buffer[0] ? buffer : NULL, entries[offset].snum + 1U, entries[offset].snum + lines - 1U, etotal);
             }
         }
 
