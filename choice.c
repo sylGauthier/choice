@@ -105,7 +105,6 @@ static int format_entry(const struct Entry* entry, const char* format, int r) {
                 }
                 if (p + cw > cols) {
                     if (dots && cols >= p) {
-                        char buffer[17]; /* this is to silence a dumb gcc warning, 7 is fine */
                         int tmp = cols - p;
                         if (tmp > 2) tmp = 2;
                         sprintf(buffer, "\x1B[%dD...", 2 - tmp);
