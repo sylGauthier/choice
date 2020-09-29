@@ -217,8 +217,10 @@ int main(int argc, char** argv) {
     }
 
     etotal = 0;
-    while (numEntries < ((unsigned int)-1) && fgets(buffer, sizeof(buffer), stdin)) {
-        if (!(entry = realloc(entries, (numEntries + 1) * sizeof(*entry)))) {
+    while (numEntries < ((unsigned int)-1)
+     && (numEntries + 1U) <= ((unsigned int)-1) / sizeof(*entry)
+     && fgets(buffer, sizeof(buffer), stdin)) {
+        if (!(entry = realloc(entries, (numEntries + 1U) * sizeof(*entry)))) {
             ret = 1;
             break;
         }
