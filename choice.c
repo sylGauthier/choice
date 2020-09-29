@@ -155,9 +155,9 @@ static void disp_page(const struct Entry* entries, unsigned int numEntries, unsi
     }
 }
 
-#define GET_INT(var) if (++i < argc) {var = strtol(argv[i], NULL, 10); continue;} break;
-#define GET_UINT(var) if (++i < argc) {var = strtoul(argv[i], NULL, 10); continue;} break;
-#define GET_STR(var) if (++i < argc) {var = argv[i]; continue;} break;
+#define GET_INT(var) if (++i < argc) {var = strtol(argv[i], NULL, 10); continue;}
+#define GET_UINT(var) if (++i < argc) {var = strtoul(argv[i], NULL, 10); continue;}
+#define GET_STR(var) if (++i < argc) {var = argv[i]; continue;}
 
 int main(int argc, char** argv) {
     char buffer[2048];
@@ -195,15 +195,15 @@ int main(int argc, char** argv) {
         if (*arg == '-') {
             while (*++arg) {
                 switch (*arg) {
-                    case 't': GET_INT(timeout);
-                    case 'e': GET_UINT(selected);
-                    case 'S': GET_STR(searcharg);
-                    case 'r': GET_STR(rformat);
-                    case 'd': GET_STR(dformat);
-                    case 's': GET_STR(separator);
+                    case 't': GET_INT(timeout); break;
+                    case 'e': GET_UINT(selected); break;
+                    case 'S': GET_STR(searcharg); break;
+                    case 'r': GET_STR(rformat); break;
+                    case 'd': GET_STR(dformat); break;
+                    case 's': GET_STR(separator); break;
                     case 'R': realtime = 1; continue;
-                    case 'W': GET_UINT(width);
-                    case 'H': GET_UINT(height);
+                    case 'W': GET_UINT(width); break;
+                    case 'H': GET_UINT(height); break;
                     case 'h': usage(argv[0]); return 0;
                 }
                 break;
